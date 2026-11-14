@@ -1,3 +1,12 @@
+// Entry note (wowo xhaxa): this file is the kit starter's entry <-> env lifecycle, kept
+// as-is except for this header comment. The lifecycle, end to end:
+//   1. create the forge server (app.ts) and listen(0) — the kernel picks an ephemeral port;
+//      the entry never binds 8080, which belongs to the trial env.
+//   2. POST the bound port to $MAKEFUN_ENV_URL/register, so the suite knows where to dial.
+//   3. Poll GET $MAKEFUN_ENV_URL/done until the env answers {"done": true}, then close the
+//      server and exit 0. The harness then stops the env, which writes the export the scorer reads.
+// The entrypoint, by itself, does nothing but run this lifecycle; the forge is app.ts.
+//
 // The entry <-> env lifecycle, as env/src/wire.ts settles it: bind an ephemeral port, tell the env the
 // port it bound, then poll until the env says the trial is over and exit 0. Keep this file as it is:
 // the suite scores the server app.ts builds, and the lifecycle is the harness's, not the contest's.
@@ -79,6 +88,8 @@ async function waitForDone(): Promise<void> {
 /** Bound the port, register it, then wait for the env: the whole life of the process. */
 async function main(): Promise<void> {
   const server = createApp();
+  // listen(0): an ephemeral port chosen by the kernel. The suite reaches the forge through
+  // the address registered with the env below, so no fixed port is ever assumed here.
   await new Promise<void>((resolve, reject) => {
     server.once('error', reject);
     server.listen(0, () => resolve());
